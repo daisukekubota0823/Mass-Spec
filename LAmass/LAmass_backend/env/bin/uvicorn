@@ -1,4 +1,4 @@
-#!/home/morah-paul/Desktop/IAU/LAmass_backend/env/bin/python3
+#!/home/morah-paul/Desktop/Mass-Spec/LAmass/LAmass_backend/env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

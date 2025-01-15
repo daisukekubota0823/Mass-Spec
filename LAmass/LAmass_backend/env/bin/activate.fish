@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/morah-paul/Desktop/IAU/LAmass_backend/env
+set -gx VIRTUAL_ENV /home/morah-paul/Desktop/Mass-Spec/LAmass/LAmass_backend/env
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

@@ -3,14 +3,12 @@ from app.main import app
 
 client = TestClient(app)
 
-def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to the Python-R Integration API"}
-
-def test_process_data():
-    payload = {"values": [1, 2, 3, 4, 5]}
-    response = client.post("/process-data", json=payload)
+def test_compute_mean_success():
+    response = client.post("/compute-mean", json={"values": [1, 2, 3, 4]})
     assert response.status_code == 200
     assert response.json()["status"] == "success"
-    assert response.json()["result"]["sum"] == 15
+    assert response.json()["mean"] == 2.5
+
+def test_compute_mean_failure():
+    response = client.post("/compute-mean", json={"values": []})
+    assert response.status_code == 400
