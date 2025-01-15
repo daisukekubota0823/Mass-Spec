@@ -1,61 +1,28 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Homepage from "./pages/Homepage/index";
+import MSDial from "./pages/MSDial/index";
+import MSFinder from "./pages/MSFinder/index";
+import MRMprobs from "./pages/MRMprobs/index";
 
-function ComputeMean() {
-  const [values, setValues] = useState("");
-  const [mean, setMean] = useState(null);
-  const [error, setError] = useState("");
-
-  const handleChange = (event) => {
-    setValues(event.target.value);
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    const numArray = values.split(",").map((num) => parseFloat(num.trim()));
-
-    if (numArray.some(isNaN)) {
-      setError("All values must be numeric.");
-      return;
-    }
-
-    try {
-      const response = await axios.post("http://127.0.0.1:8000/compute-mean", {
-        values: numArray,
-      });
-      setMean(response.data.mean);
-      setError("");
-    } catch (err) {
-      setError("Error computing mean: " + err.response.data.detail);
-    }
-  };
-
+function App() {
   return (
-    <div>
-      <h1>Compute Mean</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Enter numbers (comma-separated):
-          <input
-            type="text"
-            value={values}
-            onChange={handleChange}
-            placeholder="e.g. 1, 2, 3, 4, 5"
-          />
-        </label>
-        <button type="submit">Compute Mean</button>
-      </form>
-
-      {mean !== null && (
-        <div>
-          <h2>Mean: {mean}</h2>
+    <Router>
+      <div className="flex h-screen bg-gray-50">
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+            <div className="mx-auto">
+              <Routes>
+                <Route path="/" element={<Homepage />} />
+                <Route path="/ms-dial" element={<MSDial />} />
+                <Route path="/ms-finder" element={<MSFinder />} />
+                <Route path="/mrm-probs" element={<MRMprobs />} />
+              </Routes>
+            </div>
+          </main>
         </div>
-      )}
-
-      {error && <div style={{ color: "red" }}>{error}</div>}
-    </div>
+      </div>
+    </Router>
   );
 }
 
-export default ComputeMean;
+export default App;
