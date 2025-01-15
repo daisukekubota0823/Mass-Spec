@@ -1,25 +1,30 @@
-# Base Python image
-FROM python:3.9-slim
+# Use the official Python image as the base image
+FROM python:3.12-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    r-base \
-    && apt-get clean
-
-# Install R packages
-RUN R -e "install.packages('jsonlite')"
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Copy project files
-COPY . .
+# Install system dependencies for Python and R
+RUN apt-get update && apt-get install -y \
+    r-base \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    && apt-get clean
+
+# Copy the requirements file to the container
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port
+# Copy the application code to the container
+COPY . .
+
+# Ensure R packages are installed
+RUN Rscript -e "install.packages('methods', repos='http://cran.us.r-project.org')"
+
+# Expose the port that the app runs on
 EXPOSE 8000
 
-# Command to run the FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

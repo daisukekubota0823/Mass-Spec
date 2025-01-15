@@ -6,33 +6,26 @@ function ComputeMean() {
   const [mean, setMean] = useState(null);
   const [error, setError] = useState("");
 
-  // Handle input change
   const handleChange = (event) => {
     setValues(event.target.value);
   };
 
-  // Handle form submission
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Convert input string into an array of numbers
-    const numArray = values
-      .split(",") // Split by commas
-      .map((num) => parseFloat(num.trim())); // Trim and convert each value to a float
+    const numArray = values.split(",").map((num) => parseFloat(num.trim()));
 
-    // Validate that input is an array of numbers
     if (numArray.some(isNaN)) {
       setError("All values must be numeric.");
       return;
     }
 
     try {
-      // Make POST request to compute the mean
       const response = await axios.post("http://127.0.0.1:8000/compute-mean", {
         values: numArray,
       });
       setMean(response.data.mean);
-      setError(""); // Clear any previous errors
+      setError("");
     } catch (err) {
       setError("Error computing mean: " + err.response.data.detail);
     }

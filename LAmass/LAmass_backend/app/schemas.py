@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import List
 
 class NumbersPayload(BaseModel):
-    numbers: List[float]
+    values: List[float]
 
 class MeanResult(BaseModel):
     status: str

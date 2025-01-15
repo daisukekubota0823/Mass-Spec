@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+rpy2
+pydantic
