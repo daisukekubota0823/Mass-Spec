@@ -3,6 +3,9 @@ import Homepage from "./pages/Homepage/index";
 import MSDial from "./pages/MSDial/index";
 import MSFinder from "./pages/MSFinder/index";
 import MRMprobs from "./pages/MRMprobs/index";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function App() {
   return (
@@ -13,6 +16,9 @@ function App() {
             <div className="mx-auto">
               <Routes>
                 <Route path="/" element={<Homepage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/ms-dial" element={<MSDial />} />
                 <Route path="/ms-finder" element={<MSFinder />} />
                 <Route path="/mrm-probs" element={<MRMprobs />} />
