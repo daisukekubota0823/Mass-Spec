@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiMail, FiLock, FiArrowRight } from "react-icons/fi";
-// import Logo from "../components/Logo";
+import Logo from "../../src/assets/logo.png";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50">
       <div className="absolute top-4 left-4">
-        <Link to="/">{/* <Logo /> */}</Link>
+        <Link to="/"><img src={Logo} alt="Logo" className="w-24 h-auto"/></Link>
       </div>
 
       <div className="flex items-center justify-center min-h-screen px-4">

@@ -90,8 +90,8 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
       {/* Logo Section with enhanced styling */}
       <div className="absolute top-8 left-8 z-50 transform hover:scale-105 transition-transform">
-        <div className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-lg">
-          {/* <Logo /> */}
+        <div className=" backdrop-blur-sm p-4 rounded-xl shadow-lg">
+        <img src={Logo} alt="Logo" className="w-24 h-auto"/>
         </div>
       </div>
 
