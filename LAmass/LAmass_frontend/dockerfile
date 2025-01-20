@@ -1,0 +1,20 @@
+# Use Node.js as the base image
+FROM node:18-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and install only production dependencies
+COPY package*.json ./
+RUN npm install --only=production
+
+# Copy source files and build the app
+COPY . .
+RUN npm run build
+
+# Serve the built app with a simple HTTP server
+RUN npm install -g serve
+CMD ["serve", "-s", "dist", "-l", "80"]
+
+# Expose port 80
+EXPOSE 80
