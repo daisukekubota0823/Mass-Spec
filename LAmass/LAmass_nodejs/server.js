@@ -4,6 +4,7 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const path = require("path");
 const fs = require("fs");
+const ExcelJS = require("exceljs");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,7 +14,7 @@ app.use(cors());
 
 // Configure PostgreSQL connection
 const pool = new Pool({
-  user: "morah",
+  user: "postgres",
   host: "localhost",
   database: "lamass",
   password: "morah",
@@ -30,10 +31,16 @@ const checkDatabaseConnection = async () => {
   }
 };
 
+// Ensure assets directory exists
+const assetsDir = path.join(__dirname, "assets");
+if (!fs.existsSync(assetsDir)) {
+  fs.mkdirSync(assetsDir); // Create the assets directory if it doesn't exist
+}
+
 // Set up storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "assets/"); // Specify the directory to save files
+    cb(null, assetsDir); // Specify the directory to save files
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Append timestamp to the filename
@@ -45,13 +52,12 @@ const upload = multer({ storage });
 // Endpoint to upload files
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    const filePath = path.join(__dirname, "assets", req.file.filename);
-
     // Save metadata to PostgreSQL
     await pool.query("INSERT INTO files (filename) VALUES ($1)", [
       req.file.filename,
     ]);
 
+    console.log(`File uploaded successfully: ${req.file.filename}`);
     return res.json({
       message: "File uploaded successfully!",
       filename: req.file.filename,
@@ -66,6 +72,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 app.get("/files", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM files");
+    console.log(`Fetched ${result.rowCount} files successfully.`);
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching files:", error);
@@ -84,17 +91,20 @@ app.delete("/files/:id", async (req, res) => {
     );
 
     if (result.rowCount === 0) {
+      console.warn(`File not found for deletion with ID: ${id}`);
       return res.status(404).json({ error: "File not found." });
     }
 
     // Optionally delete the physical file as well
     const filename = result.rows[0].filename;
-    const filePath = path.join(__dirname, "assets", filename);
+    const filePath = path.join(assetsDir, filename);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath); // Delete the file from the server
+      console.log(`Deleted physical file: ${filename}`);
     }
 
+    console.log(`File deleted successfully with ID: ${id}`);
     res.json({ message: "File deleted successfully!" });
   } catch (error) {
     console.error("Error deleting file:", error);
@@ -108,14 +118,13 @@ app.get("/files/content/:filename", async (req, res) => {
 
   try {
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(path.join(__dirname, "assets", filename));
+    await workbook.xlsx.readFile(path.join(assetsDir, filename));
 
     const worksheet = workbook.worksheets[0];
     const jsonData = [];
 
     worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber > 1) {
-        // Skip header row
+      if (rowNumber > 1) { // Skip header row
         const rowData = {};
         row.eachCell((cell, colNumber) => {
           rowData[worksheet.getCell(1, colNumber).value] = cell.value; // Use header as key
@@ -124,6 +133,7 @@ app.get("/files/content/:filename", async (req, res) => {
       }
     });
 
+    console.log(`Content retrieved successfully for file: ${filename}`);
     res.json(jsonData);
   } catch (error) {
     console.error("Error reading file content:", error);
