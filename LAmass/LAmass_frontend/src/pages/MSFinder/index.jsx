@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { FiFolder, FiMinus } from "react-icons/fi";
 import ExcelJS from "exceljs";
-import  MolecularFormulaFinder from "../../components/MolecularFormulaFinder"
-import StructuralFinder from "../../components/StructuralFinder"
+import MolecularFormulaFinder from "../../components/MolecularFormulaFinder";
+import StructuralFinder from "../../components/StructuralFinder";
 import FileInformation from "../../components/FileInformation";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addFiles,
+  removeFile,
+  setSelectedFileContent,
+} from "../../features/fileSlice";
 
 export default function MSFinder() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const dispatch = useDispatch();
+  // const files = useSelector((state) => state.files.files);
+  const selectedFileContent = useSelector(
+    (state) => state.files.selectedFileContent
+  );
   const toggleModal = () => setIsModalOpen(!isModalOpen);
   const [importedData, setImportedData] = useState([]);
   const [files, setFiles] = useState([]);
@@ -60,36 +70,36 @@ export default function MSFinder() {
     }
   };
 
-// Function to handle selecting a file and populating its data
-const handleSelectFile = async (fileIndex) => {
-  const selectedFile = importedData[fileIndex]; // Get the corresponding data for the selected file
-  setSelectedFileData(selectedFile); // Set the selected file data in state
-  
-  // Read the content of the file
-  const fileName = selectedFile.uniqueFileName; // Assuming uniqueFileName is stored in importedData
-  const response = await fetch(`path/to/your/files/${fileName}`); // Adjust this path as needed
-  const blob = await response.blob();
-  
-  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+  // Function to handle selecting a file and populating its data
+  const handleSelectFile = async (fileIndex) => {
+    const selectedFile = importedData[fileIndex]; // Get the corresponding data for the selected file
+    setSelectedFileData(selectedFile); // Set the selected file data in state
+
+    // Read the content of the file
+    const fileName = selectedFile.uniqueFileName; // Assuming uniqueFileName is stored in importedData
+    const response = await fetch(`path/to/your/files/${fileName}`); // Adjust this path as needed
+    const blob = await response.blob();
+
+    if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(blob);
       const worksheet = workbook.worksheets[0];
       let content = "";
       worksheet.eachRow((row) => {
-          row.eachCell((cell) => {
-              content += `${cell.value}\t`; // Append cell values separated by tabs
-          });
-          content += "\n"; // New line after each row
+        row.eachCell((cell) => {
+          content += `${cell.value}\t`; // Append cell values separated by tabs
+        });
+        content += "\n"; // New line after each row
       });
       setFileContent(content);
-  } else if (fileName.endsWith('.txt')) {
+    } else if (fileName.endsWith(".txt")) {
       const reader = new FileReader();
       reader.onload = (e) => {
-          setFileContent(e.target.result); // Set text content
+        setFileContent(e.target.result); // Set text content
       };
       reader.readAsText(blob);
-  }
-};
+    }
+  };
 
   // Function to remove a specific file
   const handleRemove = (index) => {
@@ -290,16 +300,24 @@ const handleSelectFile = async (fileIndex) => {
             </div>
             <div className="mt-4 h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
               <div className="mt-4 h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
-              <ul className="list-disc list-inside">
-                        {files.map((file, index) => (
-                            <li key={index} className="flex justify-between items-center text-gray-700 hover:bg-gray-100 transition-colors duration-200 cursor-pointer" onClick={() => handleSelectFile(index)}>
-                                {file}
-                                <button type="button" onClick={() => handleRemove(index)} className="ml-2 text-red-600 hover:text-red-800">
-                                    <FiMinus />
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
+                <ul className="list-disc list-inside">
+                  {files.map((file, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center text-gray-700 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+                      onClick={() => handleSelectFile(index)}
+                    >
+                      {file}
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(index)}
+                        className="ml-2 text-red-600 hover:text-red-800"
+                      >
+                        <FiMinus />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
             {files.length > 0 && (
@@ -314,16 +332,16 @@ const handleSelectFile = async (fileIndex) => {
           </div>
 
           {/* Molecular Formula Finder Section */}
-            < MolecularFormulaFinder/>
+          <MolecularFormulaFinder />
 
           {/* Structural Finder Section */}
-              <StructuralFinder/>
+          <StructuralFinder />
         </div>
 
         {/* Right Column */}
         <div className="space-y-6">
           {/* File Information Section */}
-          { <FileInformation fileData={selectedFileData} />}
+          {<FileInformation fileData={selectedFileData} />}
         </div>
       </div>
     </div>
