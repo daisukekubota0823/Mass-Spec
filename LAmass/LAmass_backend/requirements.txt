@@ -1,4 +1,6 @@
 fastapi
 uvicorn
-rpy2
+sqlalchemy
 pydantic
+alembic
+psycopg2-binary

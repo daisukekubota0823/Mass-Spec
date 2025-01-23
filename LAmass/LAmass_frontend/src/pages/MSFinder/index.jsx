@@ -1,112 +1,114 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiFolder, FiMinus } from "react-icons/fi";
 import ExcelJS from "exceljs";
 import MolecularFormulaFinder from "../../components/MolecularFormulaFinder";
 import StructuralFinder from "../../components/StructuralFinder";
 import FileInformation from "../../components/FileInformation";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  addFiles,
-  removeFile,
-  setSelectedFileContent,
-} from "../../features/fileSlice";
+import { sendFile, getAllFiles, deleteFile, deleteAllFile } from "../../features/fileSlice"
+import { useDispatch, useSelector } from 'react-redux';
 
 export default function MSFinder() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const dispatch = useDispatch();
-  // const files = useSelector((state) => state.files.files);
-  const selectedFileContent = useSelector(
-    (state) => state.files.selectedFileContent
-  );
-  const toggleModal = () => setIsModalOpen(!isModalOpen);
   const [importedData, setImportedData] = useState([]);
   const [files, setFiles] = useState([]);
-  const [selectedFileData, setSelectedFileData] = useState(null); // State for selected file data
-  const [fileContent, setFileContent] = useState(""); // New state for file content
+  const [selectedFileData, setSelectedFileData] = useState(null);
+  const [fileContent, setFileContent] = useState("");
 
+  const allFiles = useSelector(state => state.files.allFiles);
+  console.log(allFiles)
+  const requiredFields = ["Spectrum Type", "Ion Mode", "Precursor m/z"];
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
-    if (file) {
+    if (!file) return;
+  
+    try {
+      console.log("Starting file processing");
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(file); // Load the selected file
-
-      const worksheet = workbook.worksheets[0]; // Get the first worksheet
+      await workbook.xlsx.load(file);
+      console.log("File loaded successfully");
+  
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) {
+        throw new Error("No worksheet found in the Excel file");
+      }
+  
       const jsonData = [];
-
-      // Read data into JSON format
+  
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber > 1) {
-          // Skip header row
           const rowData = {};
+          // let isValidRow = true;
+          
           row.eachCell((cell, colNumber) => {
-            rowData[worksheet.getCell(1, colNumber).value] = cell.value; // Use header as key
+            const header = worksheet.getCell(1, colNumber).value;
+            if (!header) {
+              console.warn(`Missing header for column ${colNumber}`);
+              return;
+            }
+            rowData[header] = cell.value;
+            
+            // if (requiredFields.includes(header) && !cell.value) {
+            //   isValidRow = false;
+            // }
           });
+          
+          // if (isValidRow) {
           jsonData.push(rowData);
+          // }
         }
       });
-
-      // Validate and generate unique filenames
-      const validDataWithNames = jsonData
-        .map((row) => {
-          if (row["Name"]) {
-            // Assuming "Name" is the column to be used for filename
-            return {
-              ...row,
-              uniqueFileName: `${row["Name"]}_${Date.now()}.xlsx`, // Create a unique filename
-            };
-          }
-          return null; // Skip rows without a name
-        })
-        .filter(Boolean); // Remove null entries
-      if (validDataWithNames.length > 0) {
-        setImportedData((prev) => [...prev, ...validDataWithNames]); // Append valid data to state
-        setFiles((prev) => [
-          ...prev,
-          ...validDataWithNames.map((item) => item.uniqueFileName),
-        ]); // Append filenames to state
-      } else {
-        alert("Imported data is invalid. Please check the required fields.");
-      }
+  
+      console.log(`Processed ${jsonData.length} rows`);
+  
+      // if (jsonData.length === 0) {
+      //   throw new Error("No valid data found in the Excel file");
+      // }
+  
+      const transformedData = jsonData.map(item => ({
+        name: item.Name,
+        SMILE: item.SMILE,
+        spectrum_type: item["Spectrum Type *"],
+        ion_mode: item["Ion Mode *"],
+        precursor_type: item["Precursor Type"],
+        inchikey: item.InChIKey,
+        ontology: item.Ontology,
+        collision_energy: item["Collision Energy"],
+        precursor_mz: parseFloat(item["Precursor m/z *"]),
+        retention_time: parseFloat(item["Retention Time (min)"]),
+        instrument: item.Instrument,
+        instrument_type: item["Instrument Type"],
+        comment: item.Comment,
+        sulfur_count: parseInt(item["Sulfur Count"]),
+        nitrogen_count: parseInt(item["Nitrogen Count"]),
+        carbon_count: parseInt(item["Carbon Count"]),
+        peak_number_ms1: parseInt(item["Peak Number(ms1)"]),
+        mstype_ms1_row1: item["MSType(ms1) Row1"],
+        mstype_ms1_row2: item["MSType(ms1) Row2"],
+        peak_number_ms2: parseInt(item["Peak Number(ms2)"]),
+        mstype_ms2_row1: item["MSType(ms2) Row1"],
+        mstype_ms2_row2: item["MSType(ms2) Row2"]
+      }))[0]; // Take the first item from the array
+  
+      console.log("Dispatching sendFile action");
+      console.log("transformedData:", JSON.stringify(transformedData));
+      const result = await dispatch(sendFile( transformedData )).unwrap();
+      console.log("Action result:", result);
+  
+    } catch (error) {
+      console.error("Detailed error:", error);
     }
   };
-
-  // Function to handle selecting a file and populating its data
-  const handleSelectFile = async (fileIndex) => {
-    const selectedFile = importedData[fileIndex]; // Get the corresponding data for the selected file
-    setSelectedFileData(selectedFile); // Set the selected file data in state
-
-    // Read the content of the file
-    const fileName = selectedFile.uniqueFileName; // Assuming uniqueFileName is stored in importedData
-    const response = await fetch(`path/to/your/files/${fileName}`); // Adjust this path as needed
-    const blob = await response.blob();
-
-    if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(blob);
-      const worksheet = workbook.worksheets[0];
-      let content = "";
-      worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
-          content += `${cell.value}\t`; // Append cell values separated by tabs
-        });
-        content += "\n"; // New line after each row
-      });
-      setFileContent(content);
-    } else if (fileName.endsWith(".txt")) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFileContent(e.target.result); // Set text content
-      };
-      reader.readAsText(blob);
-    }
+  
+  
+  const handleSelectFile = async (fileId) => {
+    const selectedFile = allFiles.find(file => file.id === fileId);
+    setSelectedFileData(selectedFile);
   };
 
-  // Function to remove a specific file
-  const handleRemove = (index) => {
-    const newFiles = files.filter((_, i) => i !== index);
-    setFiles(newFiles);
+  const handleRemove = (fileId) => {
+    dispatch(deleteFile(fileId));
   };
-  // Function to handle file export (placeholder)
+
   const handleExport = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Mass Spectrometry Data");
@@ -260,69 +262,66 @@ export default function MSFinder() {
     }
   };
 
-  // Function to remove all files
+
   const handleClearAll = () => {
-    setFiles([]);
+    dispatch(deleteAllFile());
   };
+  useEffect(() => {
+    dispatch(getAllFiles());
+  }, [dispatch]);
   return (
     <div className="space-y-6 p-6 bg-gray-100 min-h-screen">
       <h2 className="text-3xl font-bold text-purple-600">MS-FINDER</h2>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column */}
         <div className="space-y-6">
-          {/* File Navigator Section */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h3 className="text-lg font-medium text-purple-600 mb-4 flex items-center">
               <FiFolder className="mr-2" />
               File Navigator
             </h3>
             <div className="border-2 border-dashed border-purple-300 rounded-lg p-6 text-center">
-              <p className="text-gray-600">
-                Drop files here or click to browse
-              </p>
+              <p className="text-gray-600">Drop files here or click to browse</p>
               <div className="flex justify-center space-x-4 mt-2">
                 <input
                   type="file"
                   accept=".xlsx, .xls"
                   onChange={handleFileChange}
-                  className="h"
+                  className="hidden"
                   id="fileInput"
                 />
+                <label htmlFor="fileInput" className="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
+                  Choose File
+                </label>
                 <button
-                  type="button"
                   onClick={handleExport}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
                 >
-                  Export Files
+                  Export Template
                 </button>
               </div>
             </div>
             <div className="mt-4 h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
-              <div className="mt-4 h-48 overflow-y-auto border border-gray-300 rounded-lg p-2">
-                <ul className="list-disc list-inside">
-                  {files.map((file, index) => (
-                    <li
-                      key={index}
-                      className="flex justify-between items-center text-gray-700 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
-                      onClick={() => handleSelectFile(index)}
+              <ul className="list-disc list-inside">
+                {allFiles && allFiles.map((file, index) => (
+                
+                  <li
+                    key={file.id || index}
+                    className="flex justify-between items-center text-gray-700 hover:bg-gray-100 transition-colors duration-200 cursor-pointer"
+                    onClick={() => handleSelectFile(file.id)}
+                  >
+                    {file.name}
+                    <button
+                       onClick={() => handleRemove(file.id)}
+                      className="ml-2 text-red-600 hover:text-red-800"
                     >
-                      {file}
-                      <button
-                        type="button"
-                        onClick={() => handleRemove(index)}
-                        className="ml-2 text-red-600 hover:text-red-800"
-                      >
-                        <FiMinus />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                      <FiMinus />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            {files.length > 0 && (
+            {allFiles.length > 0 && (
               <button
-                type="button"
                 onClick={handleClearAll}
                 className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
               >
@@ -330,18 +329,11 @@ export default function MSFinder() {
               </button>
             )}
           </div>
-
-          {/* Molecular Formula Finder Section */}
           <MolecularFormulaFinder />
-
-          {/* Structural Finder Section */}
           <StructuralFinder />
         </div>
-
-        {/* Right Column */}
         <div className="space-y-6">
-          {/* File Information Section */}
-          {<FileInformation fileData={selectedFileData} />}
+          <FileInformation fileData={selectedFileData} />
         </div>
       </div>
     </div>
