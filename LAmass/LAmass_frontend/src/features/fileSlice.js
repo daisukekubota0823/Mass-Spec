@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios'; // Assuming you're using axios for API calls
 
-const API_BASE_URL = 'http://localhost:8000/api/v1'; // Replace with your actual API base URL
+const API_BASE_URL = 'http://localhost:5000/api/v1'; // Replace with your actual API base URL
 
 export const sendFile = createAsyncThunk(
   'data/sendFileContent',
