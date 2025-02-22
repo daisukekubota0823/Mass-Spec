@@ -1,4 +1,10 @@
 export default function MSDial() {
+  const handleFileChange = (event) => {
+    const files = event.target.files;
+    // Handle the selected files as needed
+    console.log(files);
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-800">MS-DIAL</h2>
@@ -42,9 +48,18 @@ export default function MSDial() {
                 Drag and drop your data files here
               </p>
               <p className="text-sm text-gray-500 mt-1">or</p>
-              <button className="mt-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90">
-                Browse Files
-              </button>
+              <div className="mt-2">
+                <input 
+                  type="file" 
+                  multiple 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                  id="file-upload" 
+                />
+                <label htmlFor="file-upload" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 cursor-pointer">
+                  Browse Files
+                </label>
+              </div>
             </div>
           </div>
         </div>
